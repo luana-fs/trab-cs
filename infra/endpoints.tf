@@ -1,8 +1,3 @@
-# Precisamos saber qual a VPC que estamos usando
-data "aws_vpc" "default" {
-  default = true
-}
-
 # 1. Endpoint para a API do ECR (necessário para "docker login", etc.)
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = data.aws_vpc.default.id
