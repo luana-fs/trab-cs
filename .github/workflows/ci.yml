@@ -7,6 +7,15 @@ on:
     paths-ignore:
       - 'infra/**' # Não roda se *apenas* a infra mudou
   workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log Level'
+        required: true
+        default: 'warning'
+      threads:
+        description: 'Number of threads'
+        required: false
+        default: 1
 
 
 env:
