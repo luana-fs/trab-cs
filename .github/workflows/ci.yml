@@ -42,6 +42,13 @@ jobs:
           name: jacoco-report
           path: build/reports/jacoco/test/html
 
+      - name: Upload Test Report (em caso de falha)
+        if: failure() # Você pode usar always() se quiser o relatório mesmo se passar
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report # Nome do arquivo que você vai baixar
+          path: build/reports/tests/test/
+
   # ==================================================
   # JOB 2: Deploy (O nosso novo CD)
   # ==================================================
@@ -90,4 +97,3 @@ jobs:
           aws lambda update-function-code \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --image-uri $ECR_IMAGE_URL:$IMAGE_TAG_SHA
-            
