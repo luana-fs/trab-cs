@@ -49,17 +49,13 @@ jobs:
           name: test-report # Nome do arquivo que você vai baixar
           path: build/reports/tests/test/
 
-  # ==================================================
-  # JOB 2: Deploy (O nosso novo CD)
-  # ==================================================
+# ==================================================
+# JOB 2: Deploy (CORRIGIDO COM TERRAFORM)
+# ==================================================
   deploy:
-    name: Deploy on Lambda
+    name: Deploy with Terraform
     runs-on: ubuntu-latest
-    
-    # CONDIÇÕES PRINCIPAIS:
-    # 1. 'needs' garante que o deploy só rode se o build-and-test passar
     needs: build-and-test
-    # 2. 'if' garante que o deploy só rode em push (merge), não em PR
     if: github.event_name == 'push'
 
     steps:
@@ -71,7 +67,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 3. Login no Amazon ECR
@@ -92,8 +88,21 @@ jobs:
           docker push $ECR_IMAGE_URL:latest
           docker push $ECR_IMAGE_URL:$IMAGE_TAG_SHA
 
-      - name: 6. Deploy da nova imagem no Lambda
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --image-uri $ECR_IMAGE_URL:$IMAGE_TAG_SHA
+      # --- OS PASSOS DE TERRAFORM COMEÇAM AQUI ---
+
+      - name: 6. Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0 # Pode ajustar a versão
+
+      - name: 7. Terraform Init
+        id: init
+        run: terraform init
+        # Assumindo que seus .tf estão na raiz
+        # Se estiverem numa pasta (ex: /terraform), use: 
+        # working-directory: ./terraform
+
+      - name: 8. Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+        # working-directory: ./terraform # Descomente se usar
