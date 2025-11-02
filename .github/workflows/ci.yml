@@ -97,7 +97,7 @@ jobs:
 
       - name: 7. Terraform Init
         id: init
-        run: terraform init -reconfigure
+        run: terraform init
         working-directory: ./infra
 
       - name: 8. Terraform Apply
