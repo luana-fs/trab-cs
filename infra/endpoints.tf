@@ -30,5 +30,5 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   
   # Endpoints do tipo Gateway se anexam à tabela de rotas da VPC
-  route_table_ids = data.aws_vpc.default.main_route_table_id
+  route_table_ids = [data.aws_vpc.default.main_route_table_id]
 }
