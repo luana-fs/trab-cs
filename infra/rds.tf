@@ -17,3 +17,13 @@ resource "aws_db_instance" "postgres" {
     Name = "RDS-Postgres-Academy"
   }
 }
+
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name        = "rds-subnet-group-academy"
+  subnet_ids  = data.aws_subnets.default.ids
+  description = "DB subnet group for the RDS instance"
+
+  tags = {
+    Name = "rds-subnet-group"
+  }
+}
