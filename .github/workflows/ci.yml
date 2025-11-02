@@ -98,9 +98,7 @@ jobs:
       - name: 7. Terraform Init
         id: init
         run: terraform init
-        # Assumindo que seus .tf estão na raiz
-        # Se estiverem numa pasta (ex: /terraform), use: 
-        # working-directory: ./terraform
+        working-directory: ./infra
 
       - name: 8. Terraform Apply
         id: apply
