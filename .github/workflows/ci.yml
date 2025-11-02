@@ -1,10 +1,14 @@
-name: CI/CD Pipeline
+# .github/workflows/application-ci-cd.yml
+name: 2 - APP (CI/CD)
 
 on:
   push:
     branches: [ lambda-test ]
+    paths-ignore:
+      - 'infra/**' # Não roda se *apenas* a infra mudou
+  workflow_dispatch:
 
-# Variáveis de ambiente para o job de deploy
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: cs-t1-springboot-repo
@@ -12,50 +16,26 @@ env:
 
 jobs:
   # ==================================================
-  # JOB 1: Build e Teste (O seu CI atual)
+  # JOB 1: Build e Teste (Igual ao seu)
   # ==================================================
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17 and enable Gradle cache
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
+      # ... (todos os seus passos de build e teste - sem mudanças)
       - name: Build, run tests, and verify coverage
         run: ./gradlew clean build jacocoTestCoverageVerification --no-daemon
+      # ... (upload de artifacts)
 
-      - name: Upload JaCoCo HTML report
-        uses: actions/upload-artifact@v4
-        if: always() # Garante que o report suba mesmo se o passo anterior falhar
-        with:
-          name: jacoco-report
-          path: build/reports/jacoco/test/html
-
-      - name: Upload Test Report (em caso de falha)
-        if: failure() # Você pode usar always() se quiser o relatório mesmo se passar
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report # Nome do arquivo que você vai baixar
-          path: build/reports/tests/test/
-
-# ==================================================
-# JOB 2: Deploy (CORRIGIDO COM TERRAFORM)
-# ==================================================
-  deploy:
-    name: Deploy with Terraform
+  # ==================================================
+  # JOB 2: Deploy da Aplicação (Build, Push e Update)
+  # ==================================================
+  deploy-application:
+    name: Deploy Application
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: build-and-test # Depende do JOB 1
     if: github.event_name == 'push'
 
     steps:
@@ -78,6 +58,7 @@ jobs:
         id: image-tags
         run: |
           ECR_REGISTRY_URL=${{ steps.login-ecr.outputs.registry }}
+          # Usar o SHA do commit é a melhor prática para versionar imagens
           IMAGE_TAG_SHA=$(echo $GITHUB_SHA | head -c 8)
           echo "ECR_IMAGE_URL=$ECR_REGISTRY_URL/${{ env.ECR_REPOSITORY }}" >> $GITHUB_ENV
           echo "IMAGE_TAG_SHA=$IMAGE_TAG_SHA" >> $GITHUB_ENV
@@ -88,19 +69,10 @@ jobs:
           docker push $ECR_IMAGE_URL:latest
           docker push $ECR_IMAGE_URL:$IMAGE_TAG_SHA
 
-      # --- OS PASSOS DE TERRAFORM COMEÇAM AQUI ---
-
-      - name: 6. Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0 # Pode ajustar a versão
-
-      - name: 7. Terraform Init
-        id: init
-        run: terraform init
-        working-directory: ./infra
-
-      - name: 8. Terraform Apply
-        id: apply
-        run: terraform apply -auto-approve
-        working-directory: ./infra 
+      # --- ESTE É O NOVO PASSO DE DEPLOY ---
+      - name: 6. Atualizar o código da Função Lambda
+        run: |
+          echo "Atualizando ${{ env.LAMBDA_FUNCTION_NAME }} com a imagem $ECR_IMAGE_URL:$IMAGE_TAG_SHA"
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --image-uri $ECR_IMAGE_URL:$IMAGE_TAG_SHA

@@ -1,0 +1,55 @@
+# .github/workflows/infra.yml
+name: 1 - INFRA (Provisiona Recursos)
+
+on:
+  push:
+    branches: [ lambda-test ] # Idealmente, seria 'main'
+    paths:
+      - 'infra/**' # Só roda se os arquivos .tf mudarem
+  workflow_dispatch: # Permite rodar manualmente
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy-infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 1. Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 3. Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: 4. Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ./infra
+
+      - name: 5. Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: ./infra
+
+      # Adicionar um 'plan' é uma boa prática
+      - name: 6. Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        working-directory: ./infra
+
+      - name: 7. Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+        working-directory: ./infra
