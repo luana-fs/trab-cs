@@ -9,7 +9,6 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
-  profile = "academy"
 }
 
 # Define um VPC para o seu projeto
