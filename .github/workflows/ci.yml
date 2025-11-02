@@ -90,3 +90,4 @@ jobs:
           aws lambda update-function-code \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --image-uri $ECR_IMAGE_URL:$IMAGE_TAG_SHA
+            
