@@ -31,9 +31,13 @@ resource "aws_security_group" "lambda_sg" {
 
   # Permite que a Lambda aceda à Internet (necessário para o ECR, logs, etc.)
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Permite sair para qualquer IP
+  }
+
+  tags = {
+    Name = "lambda-sg"
   }
 }
