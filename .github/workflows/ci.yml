@@ -7,7 +7,7 @@ on:
 # Variáveis de ambiente para o job de deploy
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: lambda-cs-t1-springboot
+  ECR_REPOSITORY: cs-t1-springboot-repo
   LAMBDA_FUNCTION_NAME: lambda-cs-t1-springboot
 
 jobs:
